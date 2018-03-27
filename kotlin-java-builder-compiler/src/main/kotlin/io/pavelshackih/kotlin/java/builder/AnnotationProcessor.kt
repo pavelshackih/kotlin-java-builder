@@ -1,5 +1,6 @@
 package io.pavelshackih.kotlin.java.builder
 
+import com.squareup.kotlinpoet.*
 import org.jetbrains.annotations.Nullable
 import java.io.File
 import javax.annotation.processing.*
@@ -65,14 +66,7 @@ class AnnotationProcessor : AbstractProcessor() {
             val fields = element.enclosedElements.filter { it.kind == ElementKind.FIELD }
 
             fields.forEach {
-                val fieldName = it.simpleName.toString()
-                val type = it.correctTypeName()
-                val propertySpec = PropertySpec.builder(fieldName,
-                        type,
-                        KModifier.PRIVATE,
-                        KModifier.LATEINIT)
-                        .mutable(true)
-                typeSpec.addProperty(propertySpec.build())
+                typeSpec.addProperty(generateField(it))
             }
 
             fields.forEach {
@@ -90,10 +84,10 @@ class AnnotationProcessor : AbstractProcessor() {
     private fun generateField(element: Element): PropertySpec {
         val fieldName = element.simpleName.toString()
         val type = element.correctTypeName()
+        type.
         val propertySpec = PropertySpec.builder(fieldName,
                 type,
-                KModifier.PRIVATE,
-                KModifier.LATEINIT)
+                KModifier.PRIVATE, KModifier.LATEINIT)
                 .mutable(true)
         return propertySpec.build()
     }
@@ -108,6 +102,8 @@ class AnnotationProcessor : AbstractProcessor() {
         else
             typeName
     }
+
+    private val PRIMITIVE_TYPES = listOf(BOOLEAN, BYTE, CHAR, DOUBLE, FLOAT, INT, LONG, SHORT)
 
     private fun Element.isJavaString() = this.asType().toString() == String::class.java.canonicalName
 
