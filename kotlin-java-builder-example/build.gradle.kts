@@ -1,7 +1,7 @@
 plugins {
     application
-    kotlin("jvm") version "1.2.30"
-    id("org.jetbrains.kotlin.kapt") version "1.2.30"
+    kotlin("jvm") version "1.2.40"
+    id("org.jetbrains.kotlin.kapt") version "1.2.40"
 }
 
 application {

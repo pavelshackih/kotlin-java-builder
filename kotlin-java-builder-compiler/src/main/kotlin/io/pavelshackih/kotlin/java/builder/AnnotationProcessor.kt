@@ -1,6 +1,6 @@
 package io.pavelshackih.kotlin.java.builder
 
-import org.jetbrains.annotations.Nullable
+import com.squareup.kotlinpoet.*
 import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
@@ -64,21 +64,8 @@ class AnnotationProcessor : AbstractProcessor() {
 
             val fields = element.enclosedElements.filter { it.kind == ElementKind.FIELD }
 
-            fields.forEach {
-                val fieldName = it.simpleName.toString()
-                val type = it.correctTypeName()
-                val propertySpec = PropertySpec.builder(fieldName,
-                        type,
-                        KModifier.PRIVATE,
-                        KModifier.LATEINIT)
-                        .mutable(true)
-                typeSpec.addProperty(propertySpec.build())
-            }
-
-            fields.forEach {
-                typeSpec.addFunction(generateSetter(it))
-            }
-
+            fields.forEach { typeSpec.addProperty(FieldsGenerator.generateField(it)) }
+            fields.forEach { typeSpec.addFunction(generateSetter(it)) }
             typeSpec.addFunction(generateBuildFun(element, fields))
 
             fileSpec.addType(typeSpec.build())
@@ -86,30 +73,6 @@ class AnnotationProcessor : AbstractProcessor() {
         }
         throw IllegalStateException("Wrong element type $element")
     }
-
-    private fun generateField(element: Element): PropertySpec {
-        val fieldName = element.simpleName.toString()
-        val type = element.correctTypeName()
-        val propertySpec = PropertySpec.builder(fieldName,
-                type,
-                KModifier.PRIVATE,
-                KModifier.LATEINIT)
-                .mutable(true)
-        return propertySpec.build()
-    }
-
-    private fun Element.correctTypeName(): TypeName {
-        val typeName = this.asTypeName()
-        return if (this.isJavaString())
-            when {
-                typeName.nullable -> STRING_NULLABLE_CLASS_NAME
-                else -> STRING_CLASS_NAME
-            }
-        else
-            typeName
-    }
-
-    private fun Element.isJavaString() = this.asType().toString() == String::class.java.canonicalName
 
     private fun generateSetter(element: Element): FunSpec {
         val field = element.simpleName.toString()
@@ -124,7 +87,7 @@ class AnnotationProcessor : AbstractProcessor() {
         val codeBlock = CodeBlock.builder()
         codeBlock.add("return %T(", typeElement.asClassName())
         elements.forEachIndexed { i, field ->
-            codeBlock.add("%N = %N!!", field.simpleName, field.simpleName)
+            codeBlock.add("%N = %N", field.simpleName, field.simpleName)
             if (i != elements.size - 1) {
                 codeBlock.add(", ")
             }
@@ -135,10 +98,4 @@ class AnnotationProcessor : AbstractProcessor() {
     }
 
     private fun generateFileName(element: Element): String = "${element.simpleName}Builder"
-
-    private fun Element.asTypeName(): TypeName {
-        val annotation = this.getAnnotation(Nullable::class.java)
-        val typeName = this.asType().asTypeName()
-        return if (annotation != null) typeName.asNullable() else typeName
-    }
 }

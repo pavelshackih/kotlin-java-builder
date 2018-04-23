@@ -11,9 +11,9 @@ allprojects {
     }
 }
 
-val kotlinPluginVersion by extra { "1.2.30" }
+val kotlinPluginVersion by extra { "1.2.40" }
 
 task<Wrapper>("wrapper") {
-    gradleVersion = "4.6"
+    gradleVersion = "4.7"
     distributionType = DistributionType.ALL
 }
